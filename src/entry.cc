@@ -74,6 +74,16 @@ static void JNICALL OnClassLoad(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
   IMPLICITLY_USE(klass);
 }
 
+static void JNICALL CompiledMethodUnload(jvmtiEnv* jvmti, jmethodID method,
+                                          const void* code_addr) {
+    worker->removeJavaMethod(code_addr, method);
+}
+
+static void JNICALL DynamicCodeGenerated(jvmtiEnv* jvmti, const char* name,
+                                          const void* address, jint length) {
+    worker->addRuntimeStub(address, length, name);
+}
+
 static void JNICALL OnCompiledMethodLoad(jvmtiEnv *jvmti_env, jmethodID method,
                                          jint code_size, const void *code_addr,
                                          jint map_length,
@@ -88,6 +98,7 @@ static void JNICALL OnCompiledMethodLoad(jvmtiEnv *jvmti_env, jmethodID method,
   IMPLICITLY_USE(map_length);
   IMPLICITLY_USE(map);
   IMPLICITLY_USE(compile_info);
+  worker->addJavaMethod(code_addr, code_size, method);
 }
 
 // Calls GetClassMethods on a given class to force the creation of
@@ -151,6 +162,7 @@ void JNICALL OnVMDeath(jvmtiEnv *jvmti_env, JNIEnv *jni_env) {
   if (google::javaprofiler::HeapMonitor::Enabled()) {
     google::javaprofiler::HeapMonitor::Disable();
   }
+  Worker::instance = NULL;
 }
 
 static bool PrepareJvmti(JavaVM *vm, jvmtiEnv *jvmti) {
@@ -220,7 +232,11 @@ static bool RegisterJvmti(jvmtiEnv *jvmti) {
 
   if (FLAGS_cprof_force_debug_non_safepoints) {
     callbacks.CompiledMethodLoad = &OnCompiledMethodLoad;
+    callbacks.CompiledMethodUnload = &CompiledMethodUnload;
+    callbacks.DynamicCodeGenerated = &DynamicCodeGenerated;
     events.push_back(JVMTI_EVENT_COMPILED_METHOD_LOAD);
+    events.push_back(JVMTI_EVENT_COMPILED_METHOD_UNLOAD);
+    events.push_back(JVMTI_EVENT_DYNAMIC_CODE_GENERATED);
   }
 
   JVMTI_ERROR_1(
@@ -318,6 +334,7 @@ jint JNICALL Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
           google::javaprofiler::ASGCTType>("AsyncGetCallTrace"));
 
   worker = new Worker(jvmti, threads);
+  Worker::instance = worker;
   return 0;
 }
 
