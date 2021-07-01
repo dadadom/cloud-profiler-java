@@ -101,14 +101,14 @@ void Profiler::Handle(int signum, siginfo_t *info, void *context) {
           // Retry with the fixed context, but only if PC looks reasonable,
           // otherwise AsyncGetCallTrace may crash
           if (Worker::instance->addressInCode((const void*)top_frame.pc())) {
-            LOG(INFO) << "Retrying trace, addr is in code";
+            LOG(DEBUG) << "Retrying trace, addr is in code";
             (*asgct)(&trace, max_depth, context);
           }
 
           top_frame.restore(pc, sp, fp);
 
           if (trace.num_frames > 0) {
-            LOG(INFO) << "Stack fixed, num frames is now " << trace.num_frames;
+            LOG(DEBUG) << "Stack fixed, num frames is now " << trace.num_frames;
           } else {
             LOG(INFO) << "Unable to fix up stack";
             // Restore previous context
@@ -117,7 +117,7 @@ void Profiler::Handle(int signum, siginfo_t *info, void *context) {
         }
     } else if (trace.num_frames == google::javaprofiler::kGcActive) {
         // While GC is running Java threads are known to be at safepoint
-        LOG(INFO) << "In GC, using java trace";
+        LOG(DEBUG) << "In GC, using java trace";
         getJavaTraceJvmti((jvmtiFrameInfo*)frames, frames, max_depth);
     }
 
