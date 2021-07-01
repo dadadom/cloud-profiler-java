@@ -112,14 +112,14 @@ elif [[ "${ARM64_BUILD}" = "1" ]]; then
 else
     PrintMessage "Building the builder Docker container..."
 fi
-docker build -f "${DOCKERFILE}" -t cprof-agent-builder . >> "${LOG_FILE}" 2>&1
+docker build -m13g -f "${DOCKERFILE}" -t cprof-agent-builder . >> "${LOG_FILE}" 2>&1
 
 PrintMessage "Packaging the agent code..."
 mkdir -p "${BUILD_TEMP_DIR}"/build
 tar cf "${BUILD_TEMP_DIR}"/build/src.tar . >> "${LOG_FILE}" 2>&1
 
 PrintMessage "Building the agent..."
-docker run -ti -v "${BUILD_TEMP_DIR}/build":/root/build \
+docker run --privileged -ti -v "${BUILD_TEMP_DIR}/build":/root/build \
     cprof-agent-builder bash \
     -c \
     "cd ~/build && tar xvf src.tar && make -f Makefile all \

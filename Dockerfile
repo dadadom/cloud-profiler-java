@@ -91,8 +91,8 @@ RUN git clone --depth=1 --recursive -b v1.28.1 https://github.com/grpc/grpc.git 
     cd third_party/protobuf && \
     ./autogen.sh && \
     ./configure --with-pic CXXFLAGS="$(pkg-config --cflags protobuf)" LIBS="$(pkg-config --libs protobuf)" LDFLAGS="-Wl,--no-as-needed" && \
-    make -j && make install && ldconfig && \
+    make -j1 && make install && ldconfig && \
     cd ../.. && \
-    CPPFLAGS="-I /usr/local/ssl/include" LDFLAGS="-L /usr/local/ssl/lib/ -Wl,--no-as-needed" make -j CONFIG=opt EMBED_OPENSSL=false V=1 HAS_SYSTEM_OPENSSL_NPN=0 && \
+    CPPFLAGS="-I /usr/local/ssl/include" LDFLAGS="-L /usr/local/ssl/lib/ -Wl,--no-as-needed" make -j1 CONFIG=opt EMBED_OPENSSL=false V=1 HAS_SYSTEM_OPENSSL_NPN=0 && \
     CPPFLAGS="-I /usr/local/ssl/include" LDFLAGS="-L /usr/local/ssl/lib/ -Wl,--no-as-needed" make CONFIG=opt EMBED_OPENSSL=false V=1 HAS_SYSTEM_OPENSSL_NPN=0 install && \
     rm -rf /tmp/grpc
